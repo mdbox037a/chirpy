@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"log"
 	"net/http"
 )
 
@@ -13,6 +13,6 @@ func main() {
 	}
 	err := svr.ListenAndServe()
 	if err != nil {
-		fmt.Printf("%v\n", err)
+		log.Fatal(err)
 	}
 }
