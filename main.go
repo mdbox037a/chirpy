@@ -6,17 +6,12 @@ import (
 )
 
 const filepathRoot string = "."
-const healthEndpoint string = "/healthz"
 const port string = "8080"
 
 func main() {
 	mux := http.NewServeMux()
 	mux.Handle("/app/", http.StripPrefix("/app", http.FileServer(http.Dir(filepathRoot))))
-	mux.HandleFunc(healthEndpoint, func(w http.ResponseWriter, req *http.Request) {
-		w.Header().Add("Content-Type", "text/plain; charset=utf-8")
-		w.WriteHeader(200)
-		w.Write([]byte("OK"))
-	})
+	mux.HandleFunc("/healthz", handlerReadiness)
 
 	srv := &http.Server{
 		Addr:    ":" + port,
@@ -28,4 +23,10 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+func handlerReadiness(wr http.ResponseWriter, req *http.Request) {
+	wr.Header().Add("Content-Type", "text/plain; charset=utf-8")
+	wr.WriteHeader(200)
+	wr.Write([]byte("OK"))
 }
