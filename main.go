@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"sync/atomic"
@@ -27,6 +28,7 @@ func main() {
 	mux := http.NewServeMux()
 	mux.Handle("/app/", http.StripPrefix("/app", apiCfg.middlewareMetricsInc(http.FileServer(http.Dir(filepathRoot)))))
 	mux.HandleFunc("/healthz", handlerReadiness)
+	mux.HandleFunc("/metrics", apiCfg.handlerMetrics)
 
 	srv := &http.Server{
 		Addr:    ":" + port,
@@ -44,4 +46,8 @@ func handlerReadiness(wr http.ResponseWriter, req *http.Request) {
 	wr.Header().Add("Content-Type", "text/plain; charset=utf-8")
 	wr.WriteHeader(200)
 	wr.Write([]byte("OK"))
+}
+
+func (cfg *apiConfig) handlerMetrics(wr http.ResponseWriter, req *http.Request) {
+	wr.Write([]byte(fmt.Sprintf("Hits: %d", cfg.fileserverHits.Load())))
 }
