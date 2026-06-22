@@ -26,7 +26,7 @@ func main() {
 	apiCfg := apiConfig{}
 
 	mux := http.NewServeMux()
-	mux.Handle("/app/", http.StripPrefix("/app", apiCfg.middlewareMetricsInc(http.FileServer(http.Dir(filepathRoot)))))
+	mux.Handle("/app/", apiCfg.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(filepathRoot)))))
 	mux.HandleFunc("/healthz", handlerReadiness)
 	mux.HandleFunc("/metrics", apiCfg.handlerMetrics)
 	mux.HandleFunc("/reset", apiCfg.handlerReset)
@@ -46,13 +46,13 @@ func main() {
 func handlerReadiness(wr http.ResponseWriter, req *http.Request) {
 	wr.Header().Add("Content-Type", "text/plain; charset=utf-8")
 	wr.WriteHeader(200)
-	wr.Write([]byte("OK"))
+	wr.Write([]byte("OK\n"))
 }
 
 func (cfg *apiConfig) handlerMetrics(wr http.ResponseWriter, req *http.Request) {
 	wr.Header().Add("Content-Type", "text/plain; charset=utf-8")
 	wr.WriteHeader(200)
-	wr.Write([]byte(fmt.Sprintf("Hits: %d", cfg.fileserverHits.Load())))
+	wr.Write([]byte(fmt.Sprintf("Hits: %d\n", cfg.fileserverHits.Load())))
 }
 
 func (cfg *apiConfig) handlerReset(wr http.ResponseWriter, req *http.Request) {
@@ -60,5 +60,5 @@ func (cfg *apiConfig) handlerReset(wr http.ResponseWriter, req *http.Request) {
 	cfg.fileserverHits.Store(0)
 	wr.Header().Add("Content-Type", "text/plain; charset=utf-8")
 	wr.WriteHeader(200)
-	wr.Write([]byte(fmt.Sprintf("Info: reset site hits counter to 0 \n[previous value: %d]\n[current value: %d]", previous, cfg.fileserverHits.Load())))
+	wr.Write([]byte(fmt.Sprintf("Info: reset site hits counter to 0 \n[previous value: %d]\n[current value: %d]\n", previous, cfg.fileserverHits.Load())))
 }
