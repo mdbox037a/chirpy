@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 )
 
@@ -23,4 +24,25 @@ func handlerValidateChirp(wr http.ResponseWriter, req *http.Request) {
 	}
 
 	// TODO: call return json func
+}
+
+func responWithError(wr http.ResponseWriter, code int, msg string) {
+	type resError struct {
+		Error string `json:"error"`
+	}
+
+	resErr := resError{
+		Error: msg,
+	}
+	data, err := json.Marshal(resErr)
+	if err != nil {
+		log.Printf("Error marshalling JSON: %v", err)
+		wr.WriteHeader(500)
+		return
+	}
+
+	log.Printf("%s", msg)
+	wr.WriteHeader(code)
+	wr.Header().Set("Content-Type", "application/json")
+	wr.Write(data)
 }
