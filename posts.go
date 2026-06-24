@@ -15,18 +15,20 @@ func handlerValidateChirp(wr http.ResponseWriter, req *http.Request) {
 	post := reqBody{}
 	err := decoder.Decode(&post)
 	if err != nil {
-		// TODO: call return error func
+		log.Printf("Error: %v", err)
+		respondWithError(wr, 500, "Something went wrong")
 		return
 	}
 
 	if len(post.Body) > 140 {
-		// TODO: call return error func
+		respondWithError(wr, 400, "Chirp is too long")
+		return
 	}
 
 	// TODO: call return json func
 }
 
-func responWithError(wr http.ResponseWriter, code int, msg string) {
+func respondWithError(wr http.ResponseWriter, code int, msg string) {
 	type resError struct {
 		Error string `json:"error"`
 	}
