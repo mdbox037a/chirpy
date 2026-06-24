@@ -25,7 +25,14 @@ func handlerValidateChirp(wr http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	// TODO: call return json func
+	type validity struct {
+		Valid bool `json:"valid"`
+	}
+
+	valid := validity{
+		Valid: true,
+	}
+	respondWithJSON(wr, 200, valid)
 }
 
 func respondWithError(wr http.ResponseWriter, code int, msg string) {
@@ -36,15 +43,18 @@ func respondWithError(wr http.ResponseWriter, code int, msg string) {
 	resErr := resError{
 		Error: msg,
 	}
-	data, err := json.Marshal(resErr)
+	respondWithJSON(wr, code, resErr)
+}
+
+func respondWithJSON(wr http.ResponseWriter, code int, payload interface{}) {
+	data, err := json.Marshal(payload)
 	if err != nil {
 		log.Printf("Error marshalling JSON: %v", err)
 		wr.WriteHeader(500)
 		return
 	}
 
-	log.Printf("%s", msg)
-	wr.WriteHeader(code)
 	wr.Header().Set("Content-Type", "application/json")
+	wr.WriteHeader(code)
 	wr.Write(data)
 }
