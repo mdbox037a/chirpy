@@ -20,16 +20,18 @@ func handlerValidateChirp(wr http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	// validation blocks
 	if len(post.Body) > 140 {
 		respondWithError(wr, 400, "Chirp is too long")
 		return
 	}
+	// TODO: scan for and replace profanity
 
-	type validity struct {
+	type successResponse struct {
 		Valid bool `json:"valid"`
 	}
 
-	valid := validity{
+	valid := successResponse{
 		Valid: true,
 	}
 	respondWithJSON(wr, 200, valid)
@@ -58,3 +60,5 @@ func respondWithJSON(wr http.ResponseWriter, code int, payload interface{}) {
 	wr.WriteHeader(code)
 	wr.Write(data)
 }
+
+func replaceProfanity(msg string)
