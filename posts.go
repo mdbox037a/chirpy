@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strings"
 )
 
 func handlerValidateChirp(wr http.ResponseWriter, req *http.Request) {
@@ -25,16 +26,16 @@ func handlerValidateChirp(wr http.ResponseWriter, req *http.Request) {
 		respondWithError(wr, 400, "Chirp is too long")
 		return
 	}
-	// TODO: scan for and replace profanity
+	cleanMsg := replaceProfanity(post.Body)
 
 	type successResponse struct {
-		Valid bool `json:"valid"`
+		CleanedBody string `json:"cleaned_body"`
 	}
 
-	valid := successResponse{
-		Valid: true,
+	sr := successResponse{
+		CleanedBody: cleanMsg,
 	}
-	respondWithJSON(wr, 200, valid)
+	respondWithJSON(wr, 200, sr)
 }
 
 func respondWithError(wr http.ResponseWriter, code int, msg string) {
@@ -61,4 +62,19 @@ func respondWithJSON(wr http.ResponseWriter, code int, payload interface{}) {
 	wr.Write(data)
 }
 
-func replaceProfanity(msg string)
+func replaceProfanity(msg string) string {
+	profanity := map[string]struct{}{
+		"kerfuffle": {},
+		"sharbert":  {},
+		"fornax":    {},
+	}
+
+	words := strings.Split(msg, " ")
+	for i, word := range words {
+		if _, exists := profanity[strings.ToLower(word)]; exists {
+			words[i] = "****"
+		}
+	}
+
+	return strings.Join(words, " ")
+}
