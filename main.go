@@ -56,7 +56,7 @@ func main() {
 	}
 
 	log.Printf("Serving files from %s on port %s\n", filepathRoot, port)
-	err := srv.ListenAndServe()
+	err = srv.ListenAndServe()
 	if err != nil {
 		log.Fatal(err)
 	}
