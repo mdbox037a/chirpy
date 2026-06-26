@@ -1,7 +1,12 @@
 package main
 
 import (
+	"database/sql"
+	"os"
+
+	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
+	"github.com/mdbox037a/chirpy/internal/database"
 
 	"fmt"
 	"log"
@@ -14,6 +19,7 @@ const port string = "8080"
 
 type apiConfig struct {
 	fileserverHits atomic.Int32
+	dbQueries      *database.Queries
 }
 
 func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
@@ -25,7 +31,17 @@ func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
 }
 
 func main() {
-	apiCfg := apiConfig{}
+	godotenv.Load()
+	dbURL := os.Getenv("DB_URL")
+	db, err := sql.Open("postgres", dbURL)
+	if err != nil {
+		log.Fatalf("Error: failed to connect to local database - %v", err)
+	}
+	dbQueries := database.New(db)
+
+	apiCfg := apiConfig{
+		dbQueries: dbQueries,
+	}
 
 	mux := http.NewServeMux()
 	mux.Handle("/app/", apiCfg.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(filepathRoot)))))
