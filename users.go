@@ -4,26 +4,51 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"net/mail"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/mdbox037a/chirpy/internal/database"
 )
 
-func handlerUsersCreate(wr http.ResponseWriter, req *http.Request) {
-	type user struct {
-		ID        uuid.UUID    `json:"id"`
-		CreatedAt time.Time    `json:"created_at"`
-		UpdatedAt time.Time    `json:"updated_at"`
-		Email     mail.Address `json:"email"`
+type User struct {
+	ID        uuid.UUID `json:"id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+	Email     string    `json:"email"`
+}
+
+func (cfg *apiConfig) handlerUsersCreate(wr http.ResponseWriter, req *http.Request) {
+
+	type parameters struct {
+		Email string `json:"email"`
 	}
 
+	var params parameters
 	decoder := json.NewDecoder(req.Body)
-	post := reqBody{}
-	err := decoder.Decode(&post)
+	err := decoder.Decode(&params)
 	if err != nil {
 		log.Printf("Error: %v", err)
-		respondWithError(wr, http.StatusInternalServerError, "Something went wrong")
+		respondWithError(wr, http.StatusInternalServerError, "Something went wrong - failed to decode request body")
 		return
+	}
+
+	dbUser, err := cfg.dbQueries.CreateUser(req.Context(), params.Email)
+	if err != nil {
+		log.Printf("Error: %v", err)
+		respondWithError(wr, http.StatusInternalServerError, "Something went wrong - failed to add user to database")
+		return
+	}
+
+	resUser := mapDbUserToResUser(dbUser)
+	respondWithJSON(wr, http.StatusCreated, resUser)
+	return
+}
+
+func mapDbUserToResUser(dbUser database.User) User {
+	return User{
+		ID:        dbUser.ID,
+		CreatedAt: dbUser.CreatedAt,
+		UpdatedAt: dbUser.UpdatedAt,
+		Email:     dbUser.Email,
 	}
 }
