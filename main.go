@@ -8,7 +8,6 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/mdbox037a/chirpy/internal/database"
 
-	"fmt"
 	"log"
 	"net/http"
 	"sync/atomic"
@@ -20,14 +19,6 @@ const port string = "8080"
 type apiConfig struct {
 	fileserverHits atomic.Int32
 	dbQueries      *database.Queries
-}
-
-func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		cfg.fileserverHits.Add(1)
-		log.Printf("%s %s", r.Method, r.URL.Path)
-		next.ServeHTTP(w, r)
-	})
 }
 
 func main() {
@@ -60,31 +51,4 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-}
-
-func handlerReadiness(wr http.ResponseWriter, req *http.Request) {
-	wr.Header().Add("Content-Type", "text/plain; charset=utf-8")
-	wr.WriteHeader(200)
-	wr.Write([]byte("OK\n"))
-}
-
-func (cfg *apiConfig) handlerMetrics(wr http.ResponseWriter, req *http.Request) {
-	wr.Header().Add("Content-Type", "text/html; charset=utf-8")
-	wr.WriteHeader(200)
-	wr.Write([]byte(fmt.Sprintf(`
-	<html>
-	<body>
-		<h1>Welcome, Chirpy Admin</h1>
-		<p>Chirpy has been visited %d times!</p>
-	</body>
-	</html>
-	`, cfg.fileserverHits.Load())))
-}
-
-func (cfg *apiConfig) handlerReset(wr http.ResponseWriter, req *http.Request) {
-	previous := cfg.fileserverHits.Load()
-	cfg.fileserverHits.Store(0)
-	wr.Header().Add("Content-Type", "text/plain; charset=utf-8")
-	wr.WriteHeader(200)
-	wr.Write([]byte(fmt.Sprintf("Info: reset site hits counter to 0 \n[previous value: %d]\n[current value: %d]\n", previous, cfg.fileserverHits.Load())))
 }
