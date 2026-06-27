@@ -17,13 +17,13 @@ func handlerValidateChirp(wr http.ResponseWriter, req *http.Request) {
 	err := decoder.Decode(&post)
 	if err != nil {
 		log.Printf("Error: %v", err)
-		respondWithError(wr, 500, "Something went wrong")
+		respondWithError(wr, http.StatusInternalServerError, "Something went wrong")
 		return
 	}
 
 	// validation blocks
 	if len(post.Body) > 140 {
-		respondWithError(wr, 400, "Chirp is too long")
+		respondWithError(wr, http.StatusBadRequest, "Chirp is too long")
 		return
 	}
 	cleanMsg := replaceProfanity(post.Body)
@@ -35,7 +35,7 @@ func handlerValidateChirp(wr http.ResponseWriter, req *http.Request) {
 	sr := successResponse{
 		CleanedBody: cleanMsg,
 	}
-	respondWithJSON(wr, 200, sr)
+	respondWithJSON(wr, http.StatusOK, sr)
 }
 
 func replaceProfanity(msg string) string {

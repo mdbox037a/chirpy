@@ -16,7 +16,7 @@ func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
 
 func (cfg *apiConfig) handlerMetrics(wr http.ResponseWriter, req *http.Request) {
 	wr.Header().Add("Content-Type", "text/html; charset=utf-8")
-	wr.WriteHeader(200)
+	wr.WriteHeader(http.StatusOK)
 	wr.Write([]byte(fmt.Sprintf(`
 	<html>
 	<body>
