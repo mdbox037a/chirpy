@@ -29,13 +29,10 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error: failed to connect to local database - %v", err)
 	}
-	dbQueries := database.New(db)
-
-	platform := os.Getenv("PLATFORM")
 
 	apiCfg := apiConfig{
-		dbQueries: dbQueries,
-		platform:  platform,
+		dbQueries: database.New(db),
+		platform:  os.Getenv("PLATFORM"), // dev -> allow reset api call
 	}
 
 	mux := http.NewServeMux()
