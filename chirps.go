@@ -2,40 +2,45 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strings"
+
+	"github.com/google/uuid"
 )
 
-func handlerValidateChirp(wr http.ResponseWriter, req *http.Request) {
-	type reqBody struct {
-		Body string `json:"body"`
-	}
+type reqChirp struct {
+	Body   string    `json:"body"`
+	UserID uuid.UUID `json:"user_id"`
+}
+
+func handlerNewChirp(wr http.ResponseWriter, req *http.Request) {
 
 	decoder := json.NewDecoder(req.Body)
-	post := reqBody{}
-	err := decoder.Decode(&post)
+	chirp := reqChirp{}
+	err := decoder.Decode(&chirp)
 	if err != nil {
 		log.Printf("Error: %v", err)
-		respondWithError(wr, http.StatusInternalServerError, "Something went wrong")
+		respondWithError(wr, http.StatusInternalServerError, "Failed to decode client request into chirp struct")
 		return
 	}
 
-	// validation blocks
-	if len(post.Body) > 140 {
-		respondWithError(wr, http.StatusBadRequest, "Chirp is too long")
-		return
+	msg := validateChirp(&chirp)
+	if msg != "" {
+		respondWithError(wr, http.StatusBadRequest, msg)
 	}
-	cleanMsg := replaceProfanity(post.Body)
+	// TODO: bookmark June 28, 2026
+	// next call CreateChirp to add to db
+}
 
-	type successResponse struct {
-		CleanedBody string `json:"cleaned_body"`
+func validateChirp(chirp *reqChirp) string {
+	if len(chirp.Body) > 140 {
+		return fmt.Sprint("Chirp body is too long (max 140 characters)")
 	}
-
-	sr := successResponse{
-		CleanedBody: cleanMsg,
-	}
-	respondWithJSON(wr, http.StatusOK, sr)
+	cleanMsg := replaceProfanity(chirp.Body)
+	chirp.Body = cleanMsg
+	return ""
 }
 
 func replaceProfanity(msg string) string {
