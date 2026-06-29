@@ -59,26 +59,25 @@ func validateChirp(reqChirp *reqChirp) string {
 	if len(reqChirp.Body) > 140 {
 		return fmt.Sprint("Chirp body is too long (max 140 characters)")
 	}
-	cleanMsg := replaceProfanity(reqChirp.Body)
-	reqChirp.Body = cleanMsg
+	replaceProfanity(reqChirp)
 	return ""
 }
 
-func replaceProfanity(msg string) string {
+func replaceProfanity(reqChirp *reqChirp) {
 	profanity := map[string]struct{}{
 		"kerfuffle": {},
 		"sharbert":  {},
 		"fornax":    {},
 	}
 
-	words := strings.Split(msg, " ")
+	words := strings.Split(reqChirp.Body, " ")
 	for i, word := range words {
 		if _, exists := profanity[strings.ToLower(word)]; exists {
 			words[i] = "****"
 		}
 	}
 
-	return strings.Join(words, " ")
+	reqChirp.Body = strings.Join(words, " ")
 }
 
 func mapDbChirpToResChirp(dbChirp database.Chirp) resChirp {
