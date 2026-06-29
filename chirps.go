@@ -6,14 +6,28 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 
+	"github.com/google/uuid"
 	"github.com/mdbox037a/chirpy/internal/database"
 )
 
-func (cfg *apiConfig) handlerNewChirp(wr http.ResponseWriter, req *http.Request) {
+type reqChirp struct {
+	Body   string    `json:"body"`
+	UserID uuid.UUID `json:"user_id"`
+}
 
+type resChirp struct {
+	ID        uuid.UUID `json:"id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+	Body      string    `json:"body"`
+	UserID    uuid.UUID `json:"user_id"`
+}
+
+func (cfg *apiConfig) handlerNewChirp(wr http.ResponseWriter, req *http.Request) {
 	decoder := json.NewDecoder(req.Body)
-	reqChirp := database.CreateChirpParams{}
+	reqChirp := reqChirp{}
 	err := decoder.Decode(&reqChirp)
 	if err != nil {
 		log.Printf("Error: %v", err)
@@ -26,16 +40,21 @@ func (cfg *apiConfig) handlerNewChirp(wr http.ResponseWriter, req *http.Request)
 		respondWithError(wr, http.StatusBadRequest, msg)
 	}
 
-	resChirp, err := cfg.dbQueries.CreateChirp(req.Context(), reqChirp)
+	createChirpParams := database.CreateChirpParams{
+		Body:   reqChirp.Body,
+		UserID: reqChirp.UserID,
+	}
+	dbChirp, err := cfg.dbQueries.CreateChirp(req.Context(), createChirpParams)
 	if err != nil {
 		log.Printf("Error: %v", err)
 		respondWithError(wr, http.StatusInternalServerError, "Failed to add chirp to database")
 		return
 	}
+	resChirp := mapDbChirpToResChirp(dbChirp)
 	respondWithJSON(wr, http.StatusCreated, resChirp)
 }
 
-func validateChirp(reqChirp *database.CreateChirpParams) string {
+func validateChirp(reqChirp *reqChirp) string {
 	// maybe a bit clunky now, but leaving room for more validation steps later
 	if len(reqChirp.Body) > 140 {
 		return fmt.Sprint("Chirp body is too long (max 140 characters)")
@@ -60,4 +79,14 @@ func replaceProfanity(msg string) string {
 	}
 
 	return strings.Join(words, " ")
+}
+
+func mapDbChirpToResChirp(dbChirp database.Chirp) resChirp {
+	return resChirp{
+		ID:        dbChirp.ID,
+		CreatedAt: dbChirp.CreatedAt,
+		UpdatedAt: dbChirp.UpdatedAt,
+		Body:      dbChirp.Body,
+		UserID:    dbChirp.UserID,
+	}
 }
