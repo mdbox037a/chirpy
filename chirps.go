@@ -7,39 +7,41 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/google/uuid"
+	"github.com/mdbox037a/chirpy/internal/database"
 )
 
-type reqChirp struct {
-	Body   string    `json:"body"`
-	UserID uuid.UUID `json:"user_id"`
-}
-
-func handlerNewChirp(wr http.ResponseWriter, req *http.Request) {
+func (cfg *apiConfig) handlerNewChirp(wr http.ResponseWriter, req *http.Request) {
 
 	decoder := json.NewDecoder(req.Body)
-	chirp := reqChirp{}
-	err := decoder.Decode(&chirp)
+	reqChirp := database.CreateChirpParams{}
+	err := decoder.Decode(&reqChirp)
 	if err != nil {
 		log.Printf("Error: %v", err)
 		respondWithError(wr, http.StatusInternalServerError, "Failed to decode client request into chirp struct")
 		return
 	}
 
-	msg := validateChirp(&chirp)
+	msg := validateChirp(&reqChirp)
 	if msg != "" {
 		respondWithError(wr, http.StatusBadRequest, msg)
 	}
-	// TODO: bookmark June 28, 2026
-	// next call CreateChirp to add to db
+
+	resChirp, err := cfg.dbQueries.CreateChirp(req.Context(), reqChirp)
+	if err != nil {
+		log.Printf("Error: %v", err)
+		respondWithError(wr, http.StatusInternalServerError, "Failed to add chirp to database")
+		return
+	}
+	respondWithJSON(wr, http.StatusCreated, resChirp)
 }
 
-func validateChirp(chirp *reqChirp) string {
-	if len(chirp.Body) > 140 {
+func validateChirp(reqChirp *database.CreateChirpParams) string {
+	// maybe a bit clunky now, but leaving room for more validation steps later
+	if len(reqChirp.Body) > 140 {
 		return fmt.Sprint("Chirp body is too long (max 140 characters)")
 	}
-	cleanMsg := replaceProfanity(chirp.Body)
-	chirp.Body = cleanMsg
+	cleanMsg := replaceProfanity(reqChirp.Body)
+	reqChirp.Body = cleanMsg
 	return ""
 }
 
