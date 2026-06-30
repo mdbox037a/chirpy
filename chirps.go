@@ -25,6 +25,23 @@ type resChirp struct {
 	UserID    uuid.UUID `json:"user_id"`
 }
 
+func (cfg *apiConfig) handlerGetChirps(wr http.ResponseWriter, req *http.Request) {
+	dbChirps, err := cfg.dbQueries.GetChirps(req.Context())
+	if err != nil {
+		log.Printf("Erro: %v", err)
+		respondWithError(wr, http.StatusInternalServerError, "Failed to retrieve chirps from database")
+		return
+	}
+
+	resChirps := make([]resChirp, len(dbChirps))
+	for i, dbChirp := range dbChirps {
+		resChirp := mapDbChirpToResChirp(dbChirp)
+		resChirps[i] = resChirp
+	}
+
+	respondWithJSON(wr, http.StatusOK, resChirps)
+}
+
 func (cfg *apiConfig) handlerNewChirp(wr http.ResponseWriter, req *http.Request) {
 	decoder := json.NewDecoder(req.Body)
 	reqChirp := reqChirp{}
