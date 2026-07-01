@@ -1,7 +1,9 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -40,6 +42,32 @@ func (cfg *apiConfig) handlerChirpsGet(wr http.ResponseWriter, req *http.Request
 	}
 
 	respondWithJSON(wr, http.StatusOK, resChirps)
+}
+
+func (cfg *apiConfig) handlerChirpGet(wr http.ResponseWriter, req *http.Request) {
+	reqChirpID := req.PathValue("chirpID")
+	parsedChirpID, err := uuid.Parse(reqChirpID)
+	if err != nil {
+		log.Printf("Error: %v", err)
+		respondWithError(wr, http.StatusBadRequest, "Invalid chirpID - must be valid UUID")
+		return
+	}
+
+	dbChirp, err := cfg.dbQueries.GetChirp(req.Context(), parsedChirpID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			log.Printf("Error: %v", err)
+			respondWithError(wr, http.StatusNotFound, fmt.Sprintf("Chirp with id %s not found", parsedChirpID))
+			return
+		}
+		log.Printf("Error: %v", err)
+		respondWithError(wr, http.StatusInternalServerError, "Failed to retrieve chirp from database")
+		return
+	}
+
+	resChirp := mapDbChirpToResChirp(dbChirp)
+
+	respondWithJSON(wr, http.StatusOK, resChirp)
 }
 
 func (cfg *apiConfig) handlerChirpNew(wr http.ResponseWriter, req *http.Request) {
