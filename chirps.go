@@ -25,7 +25,7 @@ type resChirp struct {
 	UserID    uuid.UUID `json:"user_id"`
 }
 
-func (cfg *apiConfig) handlerGetChirps(wr http.ResponseWriter, req *http.Request) {
+func (cfg *apiConfig) handlerChirpsGet(wr http.ResponseWriter, req *http.Request) {
 	dbChirps, err := cfg.dbQueries.GetChirps(req.Context())
 	if err != nil {
 		log.Printf("Erro: %v", err)
@@ -42,7 +42,7 @@ func (cfg *apiConfig) handlerGetChirps(wr http.ResponseWriter, req *http.Request
 	respondWithJSON(wr, http.StatusOK, resChirps)
 }
 
-func (cfg *apiConfig) handlerNewChirp(wr http.ResponseWriter, req *http.Request) {
+func (cfg *apiConfig) handlerChirpNew(wr http.ResponseWriter, req *http.Request) {
 	decoder := json.NewDecoder(req.Body)
 	reqChirp := reqChirp{}
 	err := decoder.Decode(&reqChirp)
