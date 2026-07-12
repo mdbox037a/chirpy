@@ -24,12 +24,7 @@ VALUES (
     $1,
     $2
 )
-RETURNING (
-    id,
-    created_at,
-    updated_at,
-    email
-)
+RETURNING id, created_at, updated_at, email, hashed_password
 `
 
 type CreateUserParams struct {
@@ -37,11 +32,17 @@ type CreateUserParams struct {
 	HashedPassword string
 }
 
-func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (interface{}, error) {
+func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
 	row := q.db.QueryRowContext(ctx, createUser, arg.Email, arg.HashedPassword)
-	var column_1 interface{}
-	err := row.Scan(&column_1)
-	return column_1, err
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Email,
+		&i.HashedPassword,
+	)
+	return i, err
 }
 
 const deleteUsers = `-- name: DeleteUsers :exec
