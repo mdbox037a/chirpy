@@ -26,10 +26,7 @@ DELETE FROM users;
 
 
 -- name: GetUserByEmail :one
-SELECT
-    id,
-    email,
-    hashed_password
+SELECT *
 FROM
     users
 WHERE
