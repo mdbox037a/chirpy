@@ -56,7 +56,7 @@ func (cfg *apiConfig) handlerUsersCreate(wr http.ResponseWriter, req *http.Reque
 	respondWithJSON(wr, http.StatusCreated, resUser)
 }
 
-func mapDBUserToResUser(dbUser database.User) User {
+func mapDBUserToResUser(dbUser database.CreateUserRow) User {
 	return User{
 		ID:        dbUser.ID,
 		CreatedAt: dbUser.CreatedAt,
