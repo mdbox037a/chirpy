@@ -18,14 +18,14 @@ type User struct {
 	Email     string    `json:"email"`
 }
 
+type userReqParams struct {
+	Password string `json:"password"`
+	Email    string `json:"email"`
+}
+
 func (cfg *apiConfig) handlerUsersCreate(wr http.ResponseWriter, req *http.Request) {
 
-	type parameters struct {
-		Password string `json:"password"`
-		Email    string `json:"email"`
-	}
-
-	var params parameters
+	var params userReqParams
 	decoder := json.NewDecoder(req.Body)
 	err := decoder.Decode(&params)
 	if err != nil {
@@ -56,7 +56,40 @@ func (cfg *apiConfig) handlerUsersCreate(wr http.ResponseWriter, req *http.Reque
 	respondWithJSON(wr, http.StatusCreated, resUser)
 }
 
-func mapDBUserToResUser(dbUser database.CreateUserRow) User {
+func (cfg *apiConfig) handlerUsersLogin(wr http.ResponseWriter, req *http.Request) {
+	var params userReqParams
+	decoder := json.NewDecoder(req.Body)
+	err := decoder.Decode(&params)
+	if err != nil {
+		log.Printf("Error: %v", err)
+		respondWithError(wr, http.StatusInternalServerError, "Something went wrong - failed to decode login request body")
+		return
+	}
+
+	dbUser, err := cfg.dbQueries.GetUserByEmail(req.Context(), params.Email)
+	if err != nil {
+		log.Printf("Error: %v", err)
+		// TODO: keeping it simple for now - may want to revisit to handle for server-side issue on the lookup
+		respondWithError(wr, http.StatusUnauthorized, "incorrect email or password")
+		return
+	}
+
+	match, err := auth.CheckPasswordHash(params.Password, dbUser.HashedPassword)
+	if err != nil {
+		log.Printf("Error: %v", err)
+		respondWithError(wr, http.StatusInternalServerError, "Something went wrong - password hashing comparison failed")
+		return
+	}
+
+	if !match {
+		respondWithError(wr, http.StatusUnauthorized, "incorrect email or password")
+		return
+	}
+	resUser := mapDBUserToResUser(dbUser)
+	respondWithJSON(wr, http.StatusOK, resUser)
+}
+
+func mapDBUserToResUser(dbUser database.User) User {
 	return User{
 		ID:        dbUser.ID,
 		CreatedAt: dbUser.CreatedAt,
