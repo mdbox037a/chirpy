@@ -7,7 +7,7 @@ VALUES (
   $1,
   $2
 )
-RETURNING *;
+RETURNING id, created_at, updated_at, email;
 
 
 -- name: DeleteUsers :exec
