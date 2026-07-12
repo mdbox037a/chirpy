@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/mdbox037a/chirpy/internal/auth"
 	"github.com/mdbox037a/chirpy/internal/database"
 )
 
@@ -20,7 +21,8 @@ type User struct {
 func (cfg *apiConfig) handlerUsersCreate(wr http.ResponseWriter, req *http.Request) {
 
 	type parameters struct {
-		Email string `json:"email"`
+		Password string `json:"password"`
+		Email    string `json:"email"`
 	}
 
 	var params parameters
@@ -32,19 +34,29 @@ func (cfg *apiConfig) handlerUsersCreate(wr http.ResponseWriter, req *http.Reque
 		return
 	}
 
-	dbUser, err := cfg.dbQueries.CreateUser(req.Context(), params.Email)
+	hashedPassword, err := auth.HashPassword(params.Password)
+	if err != nil {
+		log.Printf("Error: %v", err)
+		respondWithError(wr, http.StatusInternalServerError, "Something went wrong - failed to hash user password")
+	}
+
+	crUsPar := database.CreateUserParams{
+		Email:          params.Email,
+		HashedPassword: hashedPassword,
+	}
+
+	dbUser, err := cfg.dbQueries.CreateUser(req.Context(), crUsPar)
 	if err != nil {
 		log.Printf("Error: %v", err)
 		respondWithError(wr, http.StatusInternalServerError, "Something went wrong - failed to add user to database")
 		return
 	}
 
-	resUser := mapDbUserToResUser(dbUser)
+	resUser := mapDBUserToResUser(dbUser)
 	respondWithJSON(wr, http.StatusCreated, resUser)
-	return
 }
 
-func mapDbUserToResUser(dbUser database.User) User {
+func mapDBUserToResUser(dbUser database.User) User {
 	return User{
 		ID:        dbUser.ID,
 		CreatedAt: dbUser.CreatedAt,
