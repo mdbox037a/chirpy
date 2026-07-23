@@ -97,7 +97,12 @@ func (cfg *apiConfig) handlerUsersLogin(wr http.ResponseWriter, req *http.Reques
 
 	resUser := mapDBUserToResUser(dbUser)
 
-	// token, err := auth.MakeJWT(resUser.ID, cfg.jwtSecret, time.Duration(expiry)*time.Second)
+	token, err := auth.MakeJWT(resUser.ID, cfg.jwtSecret, time.Duration(expiry)*time.Second)
+	if err != nil {
+		log.Printf("Error: %v", err)
+		respondWithError(wr, http.StatusInternalServerError, "Something went wrong - failed to generate JWT")
+		return
+	}
 
 	respondWithJSON(wr, http.StatusOK, resUser)
 }
