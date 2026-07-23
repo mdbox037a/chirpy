@@ -87,19 +87,18 @@ func (cfg *apiConfig) handlerUsersLogin(wr http.ResponseWriter, req *http.Reques
 		return
 	}
 
-	var expiry int
+	expiry := 3600
 	if params.ExpiresInSeconds != nil {
 		requestedSeconds := *params.ExpiresInSeconds
-		if requestedSeconds > 3600 || requestedSeconds < 0 {
-			expiry = 3600
-		} else {
+		if requestedSeconds < 3600 && requestedSeconds > 0 {
 			expiry = requestedSeconds
 		}
-	} else {
-		expiry = 3600
 	}
 
 	resUser := mapDBUserToResUser(dbUser)
+
+	// token, err := auth.MakeJWT(resUser.ID, cfg.jwtSecret, time.Duration(expiry)*time.Second)
+
 	respondWithJSON(wr, http.StatusOK, resUser)
 }
 
