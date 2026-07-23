@@ -19,8 +19,9 @@ type User struct {
 }
 
 type userReqParams struct {
-	Password string `json:"password"`
-	Email    string `json:"email"`
+	Password         string `json:"password"`
+	Email            string `json:"email"`
+	ExpiresInSeconds *int   `json:"expires_in_seconds"`
 }
 
 func (cfg *apiConfig) handlerUsersCreate(wr http.ResponseWriter, req *http.Request) {
@@ -85,6 +86,19 @@ func (cfg *apiConfig) handlerUsersLogin(wr http.ResponseWriter, req *http.Reques
 		respondWithError(wr, http.StatusUnauthorized, "incorrect email or password")
 		return
 	}
+
+	var expiry int
+	if params.ExpiresInSeconds != nil {
+		requestedSeconds := *params.ExpiresInSeconds
+		if requestedSeconds > 3600 || requestedSeconds < 0 {
+			expiry = 3600
+		} else {
+			expiry = requestedSeconds
+		}
+	} else {
+		expiry = 3600
+	}
+
 	resUser := mapDBUserToResUser(dbUser)
 	respondWithJSON(wr, http.StatusOK, resUser)
 }
