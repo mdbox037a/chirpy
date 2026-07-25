@@ -86,6 +86,6 @@ func GetBearerToken(headers http.Header) (string, error) {
 	if rawTokenString == "" {
 		return "", errors.New("no bearer token found in request headers")
 	}
-	cleanTokenString := strings.TrimPrefix(rawTokenString, "bearer ")
+	cleanTokenString := strings.TrimPrefix(rawTokenString, "Bearer ")
 	return cleanTokenString, nil
 }
