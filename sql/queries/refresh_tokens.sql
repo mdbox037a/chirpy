@@ -10,3 +10,12 @@ VALUES (
     NOW() + INTERVAL '60 days',
     NULL
 );
+
+
+-- name: GetUserFromRefreshToken :one
+SELECT
+    user_id,
+    expires_at,
+    revoked_at
+FROM refresh_tokens
+WHERE $1 = token;
