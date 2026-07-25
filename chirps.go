@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/mdbox037a/chirpy/internal/auth"
 	"github.com/mdbox037a/chirpy/internal/database"
 )
 
@@ -79,6 +80,20 @@ func (cfg *apiConfig) handlerChirpNew(wr http.ResponseWriter, req *http.Request)
 		return
 	}
 
+	token, err := auth.GetBearerToken(req.Header)
+	if err != nil {
+		log.Printf("Error: %v", err)
+		respondWithError(wr, http.StatusBadRequest, "Invalid token in headers, or no token provided in request")
+		return
+	}
+
+	userID, err := auth.ValidateJWT(token, cfg.jwtSecret)
+	if err != nil {
+		log.Printf("Error: %v", err)
+		respondWithError(wr, http.StatusUnauthorized, "Token validation failed - unauthorized request")
+		return
+	}
+
 	msg := validateChirp(&reqChirp)
 	if msg != "" {
 		respondWithError(wr, http.StatusBadRequest, msg)
@@ -86,7 +101,7 @@ func (cfg *apiConfig) handlerChirpNew(wr http.ResponseWriter, req *http.Request)
 
 	createChirpParams := database.CreateChirpParams{
 		Body:   reqChirp.Body,
-		UserID: reqChirp.UserID,
+		UserID: userID,
 	}
 	dbChirp, err := cfg.dbQueries.CreateChirp(req.Context(), createChirpParams)
 	if err != nil {
