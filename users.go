@@ -12,17 +12,17 @@ import (
 )
 
 type User struct {
-	ID        uuid.UUID `json:"id"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-	Email     string    `json:"email"`
-	Token     string    `json:"token"`
+	ID           uuid.UUID `json:"id"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+	Email        string    `json:"email"`
+	Token        string    `json:"token"`
+	RefreshToken string    `json:"refresh_token"`
 }
 
 type userReqParams struct {
-	Password         string `json:"password"`
-	Email            string `json:"email"`
-	ExpiresInSeconds *int   `json:"expires_in_seconds"`
+	Password string `json:"password"`
+	Email    string `json:"email"`
 }
 
 func (cfg *apiConfig) handlerUsersCreate(wr http.ResponseWriter, req *http.Request) {
@@ -88,23 +88,28 @@ func (cfg *apiConfig) handlerUsersLogin(wr http.ResponseWriter, req *http.Reques
 		return
 	}
 
-	expiry := 3600
-	if params.ExpiresInSeconds != nil {
-		requestedSeconds := *params.ExpiresInSeconds
-		if requestedSeconds < 3600 && requestedSeconds > 0 {
-			expiry = requestedSeconds
-		}
-	}
-
 	resUser := mapDBUserToResUser(dbUser)
 
-	token, err := auth.MakeJWT(dbUser.ID, cfg.jwtSecret, time.Duration(expiry)*time.Second)
+	token, err := auth.MakeJWT(dbUser.ID, cfg.jwtSecret, time.Hour)
 	if err != nil {
 		log.Printf("Error: %v", err)
 		respondWithError(wr, http.StatusInternalServerError, "Something went wrong - failed to generate JWT")
 		return
 	}
 	resUser.Token = token
+
+	refreshToken := auth.MakeRefreshToken()
+	refreshTokenParams := database.CreateRefreshTokenParams{
+		Token:  refreshToken,
+		UserID: dbUser.ID,
+	}
+	err = cfg.dbQueries.CreateRefreshToken(req.Context(), refreshTokenParams)
+	if err != nil {
+		log.Printf("Error: %v", err)
+		respondWithError(wr, http.StatusInternalServerError, "Something went wrong - failed to add refresh token to db")
+		return
+	}
+	resUser.RefreshToken = refreshToken
 
 	respondWithJSON(wr, http.StatusOK, resUser)
 }
