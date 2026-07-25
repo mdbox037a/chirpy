@@ -27,7 +27,7 @@ VALUES (
 
 type CreateRefreshTokenParams struct {
 	Token  string
-	UserID uuid.NullUUID
+	UserID uuid.UUID
 }
 
 func (q *Queries) CreateRefreshToken(ctx context.Context, arg CreateRefreshTokenParams) error {
