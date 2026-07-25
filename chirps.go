@@ -15,8 +15,7 @@ import (
 )
 
 type reqChirp struct {
-	Body   string    `json:"body"`
-	UserID uuid.UUID `json:"user_id"`
+	Body string `json:"body"`
 }
 
 type resChirp struct {
