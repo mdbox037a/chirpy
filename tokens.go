@@ -55,6 +55,7 @@ func (cfg *apiConfig) handlerTokenRevoke(wr http.ResponseWriter, req *http.Reque
 	if err != nil {
 		log.Printf("Error: %v", err)
 		respondWithError(wr, http.StatusInternalServerError, "Something went wrong - failed to revoke refresh token")
+		return
 	}
-	wr.WriteHeader(http.StatusCreated)
+	wr.WriteHeader(http.StatusNoContent)
 }
