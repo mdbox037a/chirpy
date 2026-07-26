@@ -41,5 +41,20 @@ func (cfg *apiConfig) handlerTokenRefresh(wr http.ResponseWriter, req *http.Requ
 		Token: newToken,
 	}
 
-	respondWithJSON(wr, 200, resToken)
+	respondWithJSON(wr, http.StatusOK, resToken)
+}
+
+func (cfg *apiConfig) handlerTokenRevoke(wr http.ResponseWriter, req *http.Request) {
+	reqRefreshToken, err := auth.GetBearerToken(req.Header)
+	if err != nil {
+		log.Printf("Error: %v", err)
+		respondWithError(wr, http.StatusBadRequest, "Bad request - failed to get refresh token from request headers")
+		return
+	}
+	err = cfg.dbQueries.RevokeRefreshToken(req.Context(), reqRefreshToken)
+	if err != nil {
+		log.Printf("Error: %v", err)
+		respondWithError(wr, http.StatusInternalServerError, "Something went wrong - failed to revoke refresh token")
+	}
+	wr.WriteHeader(http.StatusCreated)
 }
