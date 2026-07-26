@@ -12,7 +12,7 @@ type TokenResponse struct {
 	Token string `json:"token"`
 }
 
-func (cfg *apiConfig) handlerRefreshToken(wr http.ResponseWriter, req http.Request) {
+func (cfg *apiConfig) handlerTokenRefresh(wr http.ResponseWriter, req *http.Request) {
 	reqRefreshToken, err := auth.GetBearerToken(req.Header)
 	if err != nil {
 		log.Printf("Error: %v", err)
