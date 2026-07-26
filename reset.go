@@ -8,11 +8,13 @@ import (
 func (cfg *apiConfig) handlerReset(wr http.ResponseWriter, req *http.Request) {
 	if cfg.platform != "dev" {
 		wr.WriteHeader(http.StatusForbidden)
+		return
 	}
 
 	err := cfg.dbQueries.DeleteUsers(req.Context())
 	if err != nil {
 		respondWithError(wr, http.StatusInternalServerError, "Error: failed to delete users")
+		return
 	}
 
 	previous := cfg.fileserverHits.Load()
