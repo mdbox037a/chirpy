@@ -71,7 +71,7 @@ func (cfg *apiConfig) handlerUsersModify(wr http.ResponseWriter, req *http.Reque
 	accessToken, err := auth.GetBearerToken(req.Header)
 	if err != nil {
 		log.Printf("Error: %v", err)
-		respondWithError(wr, http.StatusBadRequest, "Bad request - malformed or missing access token in request header")
+		respondWithError(wr, http.StatusUnauthorized, "Bad request - malformed or missing access token in request header")
 		return
 	}
 
