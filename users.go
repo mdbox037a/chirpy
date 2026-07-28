@@ -58,6 +58,54 @@ func (cfg *apiConfig) handlerUsersCreate(wr http.ResponseWriter, req *http.Reque
 	respondWithJSON(wr, http.StatusCreated, resUser)
 }
 
+func (cfg *apiConfig) handlerUsersModify(wr http.ResponseWriter, req *http.Request) {
+	var reqParams userReqParams
+	decoder := json.NewDecoder(req.Body)
+	err := decoder.Decode(&reqParams)
+	if err != nil {
+		log.Printf("Error: %v", err)
+		respondWithError(wr, http.StatusInternalServerError, "Something went wrong - failed to decode modify user body")
+		return
+	}
+
+	accessToken, err := auth.GetBearerToken(req.Header)
+	if err != nil {
+		log.Printf("Error: %v", err)
+		respondWithError(wr, http.StatusBadRequest, "Bad request - malformed or missing access token in request header")
+		return
+	}
+
+	userID, err := auth.ValidateJWT(accessToken, cfg.jwtSecret)
+	if err != nil {
+		log.Printf("Error: %v", err)
+		respondWithError(wr, http.StatusUnauthorized, "Unauthorized - could not validate JWT")
+		return
+	}
+
+	hashedNewPassword, err := auth.HashPassword(reqParams.Password)
+	if err != nil {
+		log.Printf("Error: %v", err)
+		respondWithError(wr, http.StatusInternalServerError, "Something went wrong - failed to hash new password")
+		return
+	}
+
+	upUsPar := database.UpdateUserParams{
+		ID:             userID,
+		Email:          reqParams.Email,
+		HashedPassword: hashedNewPassword,
+	}
+
+	dbUser, err := cfg.dbQueries.UpdateUser(req.Context(), upUsPar)
+	if err != nil {
+		log.Printf("Error: %v", err)
+		respondWithError(wr, http.StatusInternalServerError, "Something went wrong - failed to update user info in database")
+		return
+	}
+
+	resUser := mapDBUserToResUser(dbUser)
+	respondWithJSON(wr, http.StatusOK, resUser)
+}
+
 func (cfg *apiConfig) handlerUsersLogin(wr http.ResponseWriter, req *http.Request) {
 	var params userReqParams
 	decoder := json.NewDecoder(req.Body)
