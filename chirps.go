@@ -79,6 +79,22 @@ func (cfg *apiConfig) handlerChirpDelete(wr http.ResponseWriter, req *http.Reque
 		return
 	}
 
+	token, err := auth.GetBearerToken(req.Header)
+	if err != nil {
+		log.Printf("Error: %v", err)
+		respondWithError(wr, http.StatusBadRequest, "Invalid token in headers, or no token provided in request")
+		return
+	}
+
+	userID, err := auth.ValidateJWT(token, cfg.jwtSecret)
+	if err != nil {
+		log.Printf("Error: %v", err)
+		respondWithError(wr, http.StatusUnauthorized, "Token validation failed - unauthorized request")
+		return
+	}
+
+	// user query to check if chirpID is owned by userID
+
 	err = cfg.dbQueries.DeleteChirp(req.Context(), parsedChirpID)
 	if err != nil {
 		log.Printf("Error: %v", err)
