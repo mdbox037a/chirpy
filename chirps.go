@@ -70,6 +70,25 @@ func (cfg *apiConfig) handlerChirpGet(wr http.ResponseWriter, req *http.Request)
 	respondWithJSON(wr, http.StatusOK, resChirp)
 }
 
+func (cfg *apiConfig) handlerChirpDelete(wr http.ResponseWriter, req *http.Request) {
+	reqChirpID := req.PathValue("chirpID")
+	parsedChirpID, err := uuid.Parse(reqChirpID)
+	if err != nil {
+		log.Printf("Error: %v", err)
+		respondWithError(wr, http.StatusBadRequest, "Invalid chirpID - must be valid UUID")
+		return
+	}
+
+	err = cfg.dbQueries.DeleteChirp(req.Context(), parsedChirpID)
+	if err != nil {
+		log.Printf("Error: %v", err)
+		respondWithError(wr, http.StatusUnauthorized, "Failed to delete chirp - chirp not found")
+		return
+	}
+
+	wr.WriteHeader(http.StatusNoContent)
+}
+
 func (cfg *apiConfig) handlerChirpNew(wr http.ResponseWriter, req *http.Request) {
 	decoder := json.NewDecoder(req.Body)
 	reqChirp := reqChirp{}
