@@ -93,12 +93,15 @@ func (cfg *apiConfig) handlerChirpDelete(wr http.ResponseWriter, req *http.Reque
 		return
 	}
 
-	// user query to check if chirpID is owned by userID
+	delChirpParams := database.DeleteChirpParams{
+		ID:     parsedChirpID,
+		UserID: userID,
+	}
 
-	err = cfg.dbQueries.DeleteChirp(req.Context(), parsedChirpID)
+	err = cfg.dbQueries.DeleteChirp(req.Context(), delChirpParams)
 	if err != nil {
 		log.Printf("Error: %v", err)
-		respondWithError(wr, http.StatusUnauthorized, "Failed to delete chirp - chirp not found")
+		respondWithError(wr, http.StatusUnauthorized, "Failed to delete chirp - chirp not found or chirp not owned by requesting client")
 		return
 	}
 
