@@ -33,3 +33,10 @@ UPDATE users
 SET email = $2, updated_at = now(), hashed_password = $3
 WHERE id = $1
 RETURNING *;
+
+
+-- name: UpgradeUser :one
+UPDATE users
+SET is_chirpy_red = TRUE
+WHERE id = $1
+RETURNING id, is_chirpy_red;
