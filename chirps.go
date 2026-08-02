@@ -80,9 +80,10 @@ func (cfg *apiConfig) handlerChirpDelete(wr http.ResponseWriter, req *http.Reque
 	}
 
 	token, err := auth.GetBearerToken(req.Header)
+	fmt.Printf("DEBUG: %s", token)
 	if err != nil {
 		log.Printf("Error: %v", err)
-		respondWithError(wr, http.StatusBadRequest, "Invalid token in headers, or no token provided in request")
+		respondWithError(wr, http.StatusUnauthorized, "Invalid token in headers, or no token provided in request")
 		return
 	}
 
@@ -90,6 +91,18 @@ func (cfg *apiConfig) handlerChirpDelete(wr http.ResponseWriter, req *http.Reque
 	if err != nil {
 		log.Printf("Error: %v", err)
 		respondWithError(wr, http.StatusUnauthorized, "Token validation failed - unauthorized request")
+		return
+	}
+
+	dbChirp, err := cfg.dbQueries.GetChirp(req.Context(), parsedChirpID)
+	if err != nil {
+		log.Printf("Error: %v", err)
+		respondWithError(wr, http.StatusInternalServerError, "Something went wrong - failed to check db for chirp")
+		return
+	}
+
+	if dbChirp.UserID != userID {
+		respondWithError(wr, http.StatusForbidden, "Forbidden - chirp to delete not owned by requesting user")
 		return
 	}
 
@@ -101,7 +114,7 @@ func (cfg *apiConfig) handlerChirpDelete(wr http.ResponseWriter, req *http.Reque
 	err = cfg.dbQueries.DeleteChirp(req.Context(), delChirpParams)
 	if err != nil {
 		log.Printf("Error: %v", err)
-		respondWithError(wr, http.StatusUnauthorized, "Failed to delete chirp - chirp not found or chirp not owned by requesting client")
+		respondWithError(wr, http.StatusInternalServerError, "Something went wrong - failed to delete chirp in db")
 		return
 	}
 
