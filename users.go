@@ -25,6 +25,15 @@ type userReqParams struct {
 	Email    string `json:"email"`
 }
 
+type polkaUpgradeParams struct {
+	Event string          `json:"event"`
+	Data  polkaDataParams `json:"data"`
+}
+
+type polkaDataParams struct {
+	UserID uuid.UUID `json:"user_id"`
+}
+
 func (cfg *apiConfig) handlerUsersCreate(wr http.ResponseWriter, req *http.Request) {
 
 	var params userReqParams
@@ -160,6 +169,30 @@ func (cfg *apiConfig) handlerUsersLogin(wr http.ResponseWriter, req *http.Reques
 	resUser.RefreshToken = refreshToken
 
 	respondWithJSON(wr, http.StatusOK, resUser)
+}
+
+func (cfg *apiConfig) handlerUserUpgrade(wr http.ResponseWriter, req *http.Request) {
+	var reqUpgradeParams polkaUpgradeParams
+	decoder := json.NewDecoder(req.Body)
+	err := decoder.Decode(&reqUpgradeParams)
+	if err != nil {
+		log.Printf("Error: %v", err)
+		respondWithError(wr, http.StatusInternalServerError, "Something went wrong - failed to decode request json data")
+		return
+	}
+
+	if reqUpgradeParams.Event != "user.upgraded" {
+		wr.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	dbUserData, err := cfg.dbQueries.UpgradeUser(req.Context(), reqUpgradeParams.Data.UserID)
+	if err != nil || !dbUserData.IsChirpyRed {
+		log.Printf("Error: %v", err)
+		respondWithError(wr, http.StatusNotFound, "Not found - user not upgraded")
+		return
+	}
+	wr.WriteHeader(http.StatusNoContent)
 }
 
 func mapDBUserToResUser(dbUser database.User) User {
